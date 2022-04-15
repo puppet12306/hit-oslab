@@ -108,8 +108,9 @@ int do_exit(long code)
 		if (task[i] && task[i]->father == current->pid) {
 			task[i]->father = 1;
 			if (task[i]->state == TASK_ZOMBIE)
-				/* assumption task[1] is always init */
-				(void) send_sig(SIGCHLD, task[1], 1);
+				{/* assumption task[1] is always init */
+					(void) send_sig(SIGCHLD, task[1], 1);
+				}
 		}
 	for (i=0 ; i<NR_OPEN ; i++)
 		if (current->filp[i])
@@ -127,6 +128,10 @@ int do_exit(long code)
 	if (current->leader)
 		kill_session();
 	current->state = TASK_ZOMBIE;
+	/*
+	*退出一个进程
+	*/
+	fprintk(3,"%d\tE\t%d\n",current->pid,jiffies);
 	current->exit_code = code;
 	tell_father(current->father);
 	schedule();
@@ -184,6 +189,10 @@ repeat:
 		if (options & WNOHANG)
 			return 0;
 		current->state=TASK_INTERRUPTIBLE;
+		/*
+		*当前进程 => 等待
+		*/
+		fprintk(3,"%d\tW\t%d\n",current->pid,jiffies);
 		schedule();
 		if (!(current->signal &= ~(1<<(SIGCHLD-1))))
 			goto repeat;
